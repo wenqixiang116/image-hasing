@@ -1,1 +1,1 @@
-from .hashing import average_hash, difference_hash, phash, hamming_distance, hex_to_hash, hash_to_hex
+from .algorithms import average_hash, dhash, phash, hamming_distance
