@@ -60,5 +60,11 @@ class TestHashing(unittest.TestCase):
 
         self.assertEqual(hamming_distance(h1, h2), 1)
 
+    def test_non_byte_aligned_hex_conversion(self):
+        # 9 bits: 11111111 1 -> ff 01
+        arr = np.ones((1, 9), dtype=bool)
+        hex_str = hash_to_hex(arr)
+        self.assertEqual(hex_str, "ff01")
+
 if __name__ == '__main__':
     unittest.main()

@@ -14,6 +14,8 @@ def _binary_array_to_hex(arr):
         if (i % 8) == 7:
             s.append(hex(h)[2:].rjust(2, '0'))
             h = 0
+    if (len(arr.flatten()) % 8) != 0:
+        s.append(hex(h)[2:].rjust(2, '0'))
     return "".join(s)
 
 def hash_to_hex(hash_array):
