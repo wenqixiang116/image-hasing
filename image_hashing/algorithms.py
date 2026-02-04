@@ -1,6 +1,7 @@
 from PIL import Image
 import numpy as np
 import scipy.fftpack
+import pywt
 
 def average_hash(image, hash_size=8):
     """
@@ -66,6 +67,41 @@ def phash(image, hash_size=8, highfreq_factor=4):
     diff = dctlowfreq > avg
 
     return _binary_array_to_hex(diff.flatten())
+
+def whash(image, hash_size=8):
+    """
+    Wavelet Hash computation.
+    """
+    image_scale = hash_size * 2
+    # Resize to image_scale x image_scale
+    image = image.resize((image_scale, image_scale), Image.Resampling.LANCZOS)
+
+    # Grayscale
+    image = image.convert("L")
+
+    pixels = np.asarray(image) / 255.0
+
+    # Compute DWT
+    coeffs = pywt.dwt2(pixels, 'haar')
+    LL, (LH, HL, HH) = coeffs
+
+    # Compute median
+    med = np.median(LL)
+
+    # Compute bits
+    diff = LL > med
+
+    return _binary_array_to_hex(diff.flatten())
+
+def colorhash(image, hash_size=8):
+    """
+    Color Hash computation.
+    """
+    image = image.convert("RGB")
+    hashes = []
+    for band in image.split():
+        hashes.append(average_hash(band, hash_size=hash_size))
+    return "".join(hashes)
 
 def _binary_array_to_hex(arr):
     """
