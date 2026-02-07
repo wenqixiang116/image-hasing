@@ -5,8 +5,11 @@ This repository contains implementations of common image hashing algorithms in P
 ## Algorithms Implemented
 
 *   **Average Hash (aHash)**: Fast and suitable for finding strictly identical or near-identical images.
-*   **Difference Hash (dHash)**: More robust to color shifts and minor edits than aHash.
+*   **Difference Hash (dHash)**: More robust to color shifts and minor edits than aHash. (Horizontal and Vertical variants available).
 *   **Perceptual Hash (pHash)**: Robust to scaling, aspect ratio changes, and minor coloring/brightness changes. Uses Discrete Cosine Transform (DCT).
+*   **Wavelet Hash (wHash)**: Uses Discrete Wavelet Transform (DWT).
+*   **Color Hash**: Hashes color distribution.
+*   **Crop Resistant Hash**: Robust to cropping by segmenting the image.
 
 ## Installation
 
@@ -21,20 +24,28 @@ pip install -r requirements.txt
 
 ```python
 from PIL import Image
-from image_hashing import average_hash, difference_hash, phash, hamming_distance, hash_to_hex
+from image_hashing import average_hash, dhash, dhash_vertical, phash, whash, crop_resistant_hash, hamming_distance
 
 # Load an image
 image_path = 'path/to/image.jpg'
 # or using PIL directly: image = Image.open(...)
 
-# Compute hashes
+# Compute hashes (functions return hex strings directly)
 a_hash = average_hash(image_path)
-d_hash = difference_hash(image_path)
+d_hash_val = dhash(image_path)
+d_hash_v = dhash_vertical(image_path)
 p_hash = phash(image_path)
+w_hash = whash(image_path)
 
-print(f"Average Hash: {hash_to_hex(a_hash)}")
-print(f"Difference Hash: {hash_to_hex(d_hash)}")
-print(f"Perceptual Hash: {hash_to_hex(p_hash)}")
+print(f"Average Hash: {a_hash}")
+print(f"Difference Hash: {d_hash_val}")
+print(f"Vertical Difference Hash: {d_hash_v}")
+print(f"Perceptual Hash: {p_hash}")
+print(f"Wavelet Hash: {w_hash}")
+
+# Crop Resistant Hash returns a list of hashes
+crop_hashes = crop_resistant_hash(image_path)
+print(f"Crop Resistant Hashes: {crop_hashes}")
 
 # Compare two images
 image1 = 'path/to/image1.jpg'
