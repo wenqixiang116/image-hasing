@@ -6,7 +6,11 @@ This repository contains implementations of common image hashing algorithms in P
 
 *   **Average Hash (aHash)**: Fast and suitable for finding strictly identical or near-identical images.
 *   **Difference Hash (dHash)**: More robust to color shifts and minor edits than aHash.
+*   **Difference Hash Vertical (dHash Vertical)**: Variation of dHash that computes vertical differences.
 *   **Perceptual Hash (pHash)**: Robust to scaling, aspect ratio changes, and minor coloring/brightness changes. Uses Discrete Cosine Transform (DCT).
+*   **Wavelet Hash (wHash)**: Similar to pHash but uses Discrete Wavelet Transform (DWT).
+*   **Marr-Hildreth Hash**: Edge-based hash using Marr-Hildreth operator (Laplacian of Gaussian).
+*   **Color Hash**: Combines hashing of individual color channels.
 
 ## Installation
 
@@ -21,24 +25,31 @@ pip install -r requirements.txt
 
 ```python
 from PIL import Image
-from image_hashing import average_hash, difference_hash, phash, hamming_distance, hash_to_hex
+from image_hashing import average_hash, dhash, phash, whash, colorhash, dhash_vertical, marr_hildreth_hash, hamming_distance
 
 # Load an image
 image_path = 'path/to/image.jpg'
-# or using PIL directly: image = Image.open(...)
+# or using PIL directly:
+img = Image.open(image_path)
 
-# Compute hashes
-a_hash = average_hash(image_path)
-d_hash = difference_hash(image_path)
-p_hash = phash(image_path)
+# Compute hashes (returns hex strings)
+a_hash = average_hash(img)
+d_hash = dhash(img)
+p_hash = phash(img)
+w_hash = whash(img)
+m_hash = marr_hildreth_hash(img)
+dv_hash = dhash_vertical(img)
+c_hash = colorhash(img)
 
-print(f"Average Hash: {hash_to_hex(a_hash)}")
-print(f"Difference Hash: {hash_to_hex(d_hash)}")
-print(f"Perceptual Hash: {hash_to_hex(p_hash)}")
+print(f"Average Hash: {a_hash}")
+print(f"Difference Hash: {d_hash}")
+print(f"Perceptual Hash: {p_hash}")
+print(f"Wavelet Hash: {w_hash}")
+print(f"Marr-Hildreth Hash: {m_hash}")
 
 # Compare two images
-image1 = 'path/to/image1.jpg'
-image2 = 'path/to/image2.jpg'
+image1 = Image.open('path/to/image1.jpg')
+image2 = Image.open('path/to/image2.jpg')
 
 hash1 = phash(image1)
 hash2 = phash(image2)
