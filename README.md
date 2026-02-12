@@ -6,7 +6,10 @@ This repository contains implementations of common image hashing algorithms in P
 
 *   **Average Hash (aHash)**: Fast and suitable for finding strictly identical or near-identical images.
 *   **Difference Hash (dHash)**: More robust to color shifts and minor edits than aHash.
+*   **Vertical Difference Hash (dHash Vertical)**: Similar to dHash but compares vertical gradients.
 *   **Perceptual Hash (pHash)**: Robust to scaling, aspect ratio changes, and minor coloring/brightness changes. Uses Discrete Cosine Transform (DCT).
+*   **Wavelet Hash (wHash)**: Similar to pHash but uses Discrete Wavelet Transform (DWT).
+*   **Marr-Hildreth Hash**: Edge-based hash using Marr-Hildreth operator (Laplacian of Gaussian).
 
 ## Installation
 
@@ -21,7 +24,7 @@ pip install -r requirements.txt
 
 ```python
 from PIL import Image
-from image_hashing import average_hash, difference_hash, phash, hamming_distance, hash_to_hex
+from image_hashing import average_hash, dhash, dhash_vertical, phash, whash, marr_hildreth_hash, hamming_distance
 
 # Load an image
 image_path = 'path/to/image.jpg'
@@ -29,12 +32,18 @@ image_path = 'path/to/image.jpg'
 
 # Compute hashes
 a_hash = average_hash(image_path)
-d_hash = difference_hash(image_path)
+d_hash = dhash(image_path)
+dv_hash = dhash_vertical(image_path)
 p_hash = phash(image_path)
+w_hash = whash(image_path)
+mh_hash = marr_hildreth_hash(image_path)
 
-print(f"Average Hash: {hash_to_hex(a_hash)}")
-print(f"Difference Hash: {hash_to_hex(d_hash)}")
-print(f"Perceptual Hash: {hash_to_hex(p_hash)}")
+print(f"Average Hash: {a_hash}")
+print(f"Difference Hash: {d_hash}")
+print(f"Vertical Difference Hash: {dv_hash}")
+print(f"Perceptual Hash: {p_hash}")
+print(f"Wavelet Hash: {w_hash}")
+print(f"Marr-Hildreth Hash: {mh_hash}")
 
 # Compare two images
 image1 = 'path/to/image1.jpg'
