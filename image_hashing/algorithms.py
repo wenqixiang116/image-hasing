@@ -1,6 +1,7 @@
 from PIL import Image
 import numpy as np
 import scipy.fftpack
+import scipy.ndimage
 import pywt
 
 def average_hash(image, hash_size=8):
@@ -72,6 +73,9 @@ def whash(image, hash_size=8):
     """
     Wavelet Hash computation.
     """
+    if isinstance(image, str):
+        image = Image.open(image)
+
     image_scale = hash_size * 2
     # Resize to image_scale x image_scale
     image = image.resize((image_scale, image_scale), Image.Resampling.LANCZOS)
@@ -90,6 +94,46 @@ def whash(image, hash_size=8):
 
     # Compute bits
     diff = LL > med
+
+    return _binary_array_to_hex(diff.flatten())
+
+def dhash_vertical(image, hash_size=8):
+    """
+    Vertical Difference Hash computation.
+    """
+    if isinstance(image, str):
+        image = Image.open(image)
+
+    # Resize to hash_size x (hash_size + 1)
+    image = image.resize((hash_size, hash_size + 1), Image.Resampling.LANCZOS)
+
+    # Grayscale
+    image = image.convert("L")
+
+    # Compute differences
+    pixels = np.asarray(image)
+    # Compare pixel[y, x] to pixel[y+1, x]
+    diff = pixels[1:, :] > pixels[:-1, :]
+
+    return _binary_array_to_hex(diff.flatten())
+
+def marr_hildreth_hash(image, hash_size=8, alpha=2.5):
+    """
+    Marr-Hildreth Hash computation.
+    """
+    if isinstance(image, str):
+        image = Image.open(image)
+
+    # Resize to hash_size x hash_size
+    image = image.resize((hash_size, hash_size), Image.Resampling.LANCZOS)
+
+    # Grayscale
+    image = image.convert("L")
+
+    pixels = np.asarray(image).astype("float")
+
+    vals = scipy.ndimage.gaussian_laplace(pixels, sigma=alpha)
+    diff = vals > 0
 
     return _binary_array_to_hex(diff.flatten())
 
