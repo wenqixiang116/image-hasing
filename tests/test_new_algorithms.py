@@ -1,6 +1,6 @@
 import unittest
 from PIL import Image
-from image_hashing import whash, colorhash
+from image_hashing import whash, colorhash, dhash_vertical, marr_hildreth_hash
 
 class TestNewAlgorithms(unittest.TestCase):
     def setUp(self):
@@ -12,6 +12,12 @@ class TestNewAlgorithms(unittest.TestCase):
 
         # Another image
         self.image2 = Image.new('RGB', (100, 100), color='blue')
+
+        # Image with vertical variation: black top, white bottom
+        self.image_vertical = Image.new('RGB', (100, 100), color='black')
+        for x in range(100):
+            for y in range(50, 100):
+                self.image_vertical.putpixel((x, y), (255, 255, 255))
 
     def test_whash(self):
         h = whash(self.image)
@@ -36,6 +42,32 @@ class TestNewAlgorithms(unittest.TestCase):
 
         # Test diff
         h3 = colorhash(self.image2)
+        self.assertNotEqual(h, h3)
+
+    def test_dhash_vertical(self):
+        # Use image with vertical variation
+        h = dhash_vertical(self.image_vertical)
+        self.assertIsInstance(h, str)
+        self.assertEqual(len(h), 16)
+
+        h2 = dhash_vertical(self.image_vertical)
+        self.assertEqual(h, h2)
+
+        # self.image (horizontal split) should have near zero vertical hash (all 0s)
+        # self.image_vertical (vertical split) should have non-zero vertical hash
+        h_horiz = dhash_vertical(self.image)
+        self.assertNotEqual(h, h_horiz)
+
+    def test_marr_hildreth_hash(self):
+        h = marr_hildreth_hash(self.image)
+        self.assertIsInstance(h, str)
+        self.assertEqual(len(h), 16)
+
+        h2 = marr_hildreth_hash(self.image)
+        self.assertEqual(h, h2)
+
+        # Test diff
+        h3 = marr_hildreth_hash(self.image2)
         self.assertNotEqual(h, h3)
 
 if __name__ == '__main__':
