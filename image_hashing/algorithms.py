@@ -1,6 +1,7 @@
 from PIL import Image
 import numpy as np
 import scipy.fftpack
+import scipy.ndimage
 import pywt
 
 def average_hash(image, hash_size=8):
@@ -39,6 +40,23 @@ def dhash(image, hash_size=8):
 
     return _binary_array_to_hex(diff.flatten())
 
+def dhash_vertical(image, hash_size=8):
+    """
+    Vertical Difference Hash computation.
+    """
+    # Resize to hash_size x (hash_size + 1)
+    image = image.resize((hash_size, hash_size + 1), Image.Resampling.LANCZOS)
+
+    # Grayscale
+    image = image.convert("L")
+
+    # Compute differences
+    pixels = np.asarray(image)
+    # Compare pixel[y, x] to pixel[y+1, x]
+    diff = pixels[1:, :] > pixels[:-1, :]
+
+    return _binary_array_to_hex(diff.flatten())
+
 def phash(image, hash_size=8, highfreq_factor=4):
     """
     Perceptual Hash computation.
@@ -65,6 +83,26 @@ def phash(image, hash_size=8, highfreq_factor=4):
 
     # Compute bits
     diff = dctlowfreq > avg
+
+    return _binary_array_to_hex(diff.flatten())
+
+def marr_hildreth_hash(image, hash_size=8, alpha=2.5):
+    """
+    Marr-Hildreth Hash computation.
+    """
+    # Resize to hash_size x hash_size
+    image = image.resize((hash_size, hash_size), Image.Resampling.LANCZOS)
+
+    # Grayscale
+    image = image.convert("L")
+
+    pixels = np.asarray(image).astype("float")
+
+    # Compute LoG
+    dst = scipy.ndimage.gaussian_laplace(pixels, sigma=alpha)
+
+    # Compute bits
+    diff = dst > 0
 
     return _binary_array_to_hex(diff.flatten())
 
