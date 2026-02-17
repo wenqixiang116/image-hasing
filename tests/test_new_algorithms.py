@@ -1,6 +1,6 @@
 import unittest
 from PIL import Image
-from image_hashing import whash, colorhash
+from image_hashing import whash, colorhash, dhash_vertical, marr_hildreth_hash
 
 class TestNewAlgorithms(unittest.TestCase):
     def setUp(self):
@@ -36,6 +36,40 @@ class TestNewAlgorithms(unittest.TestCase):
 
         # Test diff
         h3 = colorhash(self.image2)
+        self.assertNotEqual(h, h3)
+
+    def test_dhash_vertical(self):
+        h = dhash_vertical(self.image)
+        self.assertIsInstance(h, str)
+        self.assertEqual(len(h), 16)
+
+        h2 = dhash_vertical(self.image)
+        self.assertEqual(h, h2)
+
+        # dhash vertical works on vertical gradients.
+        # self.image has vertical lines (left black, right white), so horizontal gradient.
+        # Row y and Row y+1 are identical.
+        # So dhash_vertical should be all zeros?
+
+        # Let's create an image with horizontal stripes for vertical dhash testing
+        img_v = Image.new('RGB', (100, 100), color='black')
+        for y in range(50, 100):
+            for x in range(100):
+                img_v.putpixel((x, y), (255, 255, 255))
+
+        h_v = dhash_vertical(img_v)
+        # It should be non-zero
+        self.assertNotEqual(h_v, "0000000000000000")
+
+    def test_marr_hildreth_hash(self):
+        h = marr_hildreth_hash(self.image)
+        self.assertIsInstance(h, str)
+        self.assertEqual(len(h), 16)
+
+        h2 = marr_hildreth_hash(self.image)
+        self.assertEqual(h, h2)
+
+        h3 = marr_hildreth_hash(self.image2)
         self.assertNotEqual(h, h3)
 
 if __name__ == '__main__':
