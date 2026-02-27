@@ -1,6 +1,7 @@
 from PIL import Image
 import numpy as np
 import scipy.fftpack
+import scipy.ndimage
 
 def _binary_array_to_hex(arr):
     """
@@ -66,6 +67,19 @@ def difference_hash(image, hash_size=8):
     diff = pixels[:, 1:] > pixels[:, :-1]
     return diff
 
+def dhash_vertical(image, hash_size=8):
+    """
+    Compute the difference hash of the given image vertically.
+    """
+    if isinstance(image, str):
+        image = Image.open(image)
+
+    image = image.convert("L").resize((hash_size, hash_size + 1), Image.Resampling.LANCZOS)
+    pixels = np.asarray(image)
+    # compare pixel to the one below
+    diff = pixels[1:, :] > pixels[:-1, :]
+    return diff
+
 def phash(image, hash_size=8, highfreq_factor=4):
     """
     Compute the perceptual hash of the given image.
@@ -81,6 +95,26 @@ def phash(image, hash_size=8, highfreq_factor=4):
     dctlowfreq = dct[:hash_size, :hash_size]
     med = np.median(dctlowfreq)
     diff = dctlowfreq > med
+    return diff
+
+def marr_hildreth_hash(image, hash_size=8, alpha=2.5, scale=4):
+    """
+    Marr-Hildreth Operator Based Hash.
+    """
+    if isinstance(image, str):
+        image = Image.open(image)
+
+    img_size = hash_size * scale
+    image = image.convert("L").resize((img_size, img_size), Image.Resampling.LANCZOS)
+    pixels = np.asarray(image).astype(float)
+
+    # Apply LoG
+    output = scipy.ndimage.gaussian_laplace(pixels, sigma=alpha)
+
+    # Subsample
+    output_small = output[::scale, ::scale]
+
+    diff = output_small > 0
     return diff
 
 def hamming_distance(hash1, hash2):
