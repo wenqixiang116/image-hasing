@@ -1,6 +1,7 @@
 from PIL import Image
 import numpy as np
 import scipy.fftpack
+import scipy.ndimage
 import pywt
 
 def average_hash(image, hash_size=8):
@@ -36,6 +37,23 @@ def dhash(image, hash_size=8):
     pixels = np.asarray(image)
     # Compare pixel[x, y] to pixel[x+1, y]
     diff = pixels[:, 1:] > pixels[:, :-1]
+
+    return _binary_array_to_hex(diff.flatten())
+
+def dhash_vertical(image, hash_size=8):
+    """
+    Difference Hash computation vertically.
+    """
+    # Resize to hash_size x (hash_size + 1)
+    image = image.resize((hash_size, hash_size + 1), Image.Resampling.LANCZOS)
+
+    # Grayscale
+    image = image.convert("L")
+
+    # Compute differences
+    pixels = np.asarray(image)
+    # Compare pixel[y, x] to pixel[y+1, x]
+    diff = pixels[1:, :] > pixels[:-1, :]
 
     return _binary_array_to_hex(diff.flatten())
 
@@ -91,6 +109,23 @@ def whash(image, hash_size=8):
     # Compute bits
     diff = LL > med
 
+    return _binary_array_to_hex(diff.flatten())
+
+def marr_hildreth_hash(image, hash_size=8, alpha=2.5, scale=4):
+    """
+    Marr-Hildreth Operator Based Hash.
+    """
+    img_size = hash_size * scale
+    image = image.convert("L").resize((img_size, img_size), Image.Resampling.LANCZOS)
+    pixels = np.asarray(image).astype(float)
+
+    # Apply LoG
+    output = scipy.ndimage.gaussian_laplace(pixels, sigma=alpha)
+
+    # Subsample
+    output_small = output[::scale, ::scale]
+
+    diff = output_small > 0
     return _binary_array_to_hex(diff.flatten())
 
 def colorhash(image, hash_size=8):
