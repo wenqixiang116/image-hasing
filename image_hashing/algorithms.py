@@ -1,6 +1,7 @@
 from PIL import Image
 import numpy as np
 import scipy.fftpack
+import scipy.ndimage
 import pywt
 
 def average_hash(image, hash_size=8):
@@ -102,6 +103,48 @@ def colorhash(image, hash_size=8):
     for band in image.split():
         hashes.append(average_hash(band, hash_size=hash_size))
     return "".join(hashes)
+
+def dhash_vertical(image, hash_size=8):
+    """
+    Vertical Difference Hash computation.
+    """
+    # Resize to hash_size x (hash_size + 1)
+    image = image.resize((hash_size, hash_size + 1), Image.Resampling.LANCZOS)
+
+    # Grayscale
+    image = image.convert("L")
+
+    # Compute differences
+    pixels = np.asarray(image)
+    # Compare pixel[x, y] to pixel[x, y+1]
+    diff = pixels[1:, :] > pixels[:-1, :]
+
+    return _binary_array_to_hex(diff.flatten())
+
+def marr_hildreth_hash(image, hash_size=8, alpha=2.5, scale=4):
+    """
+    Marr-Hildreth Hash computation.
+    """
+    img_size = hash_size * scale
+    # Resize
+    image = image.resize((img_size, img_size), Image.Resampling.LANCZOS)
+
+    # Grayscale
+    image = image.convert("L")
+
+    # To float to prevent uint8 overflow/wrapping issues
+    pixels = np.asarray(image).astype(float)
+
+    # Laplacian of Gaussian
+    log_img = scipy.ndimage.gaussian_laplace(pixels, sigma=alpha)
+
+    # Subsample
+    blocks = log_img[::scale, ::scale]
+
+    # Compute bits
+    diff = blocks < 0
+
+    return _binary_array_to_hex(diff.flatten())
 
 def _binary_array_to_hex(arr):
     """
