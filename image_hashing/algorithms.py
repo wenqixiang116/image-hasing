@@ -1,6 +1,7 @@
 from PIL import Image
 import numpy as np
 import scipy.fftpack
+import scipy.ndimage
 import pywt
 
 def average_hash(image, hash_size=8):
@@ -36,6 +37,23 @@ def dhash(image, hash_size=8):
     pixels = np.asarray(image)
     # Compare pixel[x, y] to pixel[x+1, y]
     diff = pixels[:, 1:] > pixels[:, :-1]
+
+    return _binary_array_to_hex(diff.flatten())
+
+def dhash_vertical(image, hash_size=8):
+    """
+    Difference Hash computation (vertical).
+    """
+    # Resize to hash_size x (hash_size + 1)
+    image = image.resize((hash_size, hash_size + 1), Image.Resampling.LANCZOS)
+
+    # Grayscale
+    image = image.convert("L")
+
+    # Compute differences
+    pixels = np.asarray(image)
+    # Compare pixel[x, y] to pixel[x, y+1]
+    diff = pixels[1:, :] > pixels[:-1, :]
 
     return _binary_array_to_hex(diff.flatten())
 
@@ -102,6 +120,37 @@ def colorhash(image, hash_size=8):
     for band in image.split():
         hashes.append(average_hash(band, hash_size=hash_size))
     return "".join(hashes)
+
+def marr_hildreth_hash(image, alpha=2.5, scale=1, hash_size=8):
+    """
+    Marr-Hildreth Hash computation.
+    """
+    # Calculate the size before subsampling
+    # We want the final size to be hash_size x hash_size, so the resized
+    # image before subsampling should be (hash_size * scale) x (hash_size * scale).
+    img_size = hash_size * scale
+
+    # Resize image to img_size x img_size
+    image = image.resize((img_size, img_size), Image.Resampling.LANCZOS)
+
+    # Convert to grayscale
+    image = image.convert("L")
+
+    # Use float values for precision
+    pixels = np.asarray(image).astype(float)
+
+    # Apply Laplacian of Gaussian
+    log_image = scipy.ndimage.gaussian_laplace(pixels, sigma=alpha)
+
+    # Subsample image (take every scale-th pixel)
+    if scale > 1:
+        log_image = log_image[::scale, ::scale]
+
+    # Compute bits based on zero-crossings
+    # Here we use the sign of the Laplacian of Gaussian output
+    diff = log_image < 0
+
+    return _binary_array_to_hex(diff.flatten())
 
 def _binary_array_to_hex(arr):
     """
