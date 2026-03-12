@@ -1,7 +1,7 @@
 import unittest
 import numpy as np
 from PIL import Image, ImageDraw
-from image_hashing.hashing import average_hash, difference_hash, phash, hamming_distance, hash_to_hex, hex_to_hash
+from image_hashing.hashing import average_hash, difference_hash, dhash_vertical, phash, marr_hildreth_hash, hamming_distance, hash_to_hex, hex_to_hash
 
 class TestHashing(unittest.TestCase):
     def setUp(self):
@@ -32,6 +32,34 @@ class TestHashing(unittest.TestCase):
         h1 = difference_hash(self.img1)
         h2 = difference_hash(self.img2)
         h3 = difference_hash(self.img3)
+
+        self.assertTrue(h1.shape == (8, 8))
+        self.assertLess(hamming_distance(h1, h2), 5)
+        self.assertGreater(hamming_distance(h1, h3), 10)
+
+    def test_dhash_vertical(self):
+        # Memory says: "When testing dhash_vertical, test images must have vertical color variation
+        # (e.g., be vertically split) to avoid generating an all-zero hash..."
+        img1 = Image.new('RGB', (100, 100), color='white')
+        d1 = ImageDraw.Draw(img1)
+        d1.rectangle([0, 50, 100, 100], fill='black') # Vertically split
+
+        img2 = img1.resize((90, 90)) # Same content, different size
+
+        img3 = Image.new('RGB', (100, 100), color='black') # Different content
+
+        h1 = dhash_vertical(img1)
+        h2 = dhash_vertical(img2)
+        h3 = dhash_vertical(img3)
+
+        self.assertTrue(h1.shape == (8, 8))
+        self.assertLess(hamming_distance(h1, h2), 5)
+        self.assertGreater(hamming_distance(h1, h3), 10)
+
+    def test_marr_hildreth_hash(self):
+        h1 = marr_hildreth_hash(self.img1)
+        h2 = marr_hildreth_hash(self.img2)
+        h3 = marr_hildreth_hash(self.img3)
 
         self.assertTrue(h1.shape == (8, 8))
         self.assertLess(hamming_distance(h1, h2), 5)
