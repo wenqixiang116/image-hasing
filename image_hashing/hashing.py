@@ -66,6 +66,37 @@ def difference_hash(image, hash_size=8):
     diff = pixels[:, 1:] > pixels[:, :-1]
     return diff
 
+def dhash_vertical(image, hash_size=8):
+    """
+    Compute the vertical difference hash of the given image.
+    """
+    if isinstance(image, str):
+        image = Image.open(image)
+
+    image = image.convert("L").resize((hash_size, hash_size + 1), Image.Resampling.LANCZOS)
+    pixels = np.asarray(image)
+    # compare to pixel below
+    diff = pixels[1:, :] > pixels[:-1, :]
+    return diff
+
+def marr_hildreth_hash(image, alpha=2.5, scale=2, hash_size=8):
+    """
+    Compute the Marr-Hildreth hash of the given image.
+    """
+    import scipy.ndimage
+    if isinstance(image, str):
+        image = Image.open(image)
+
+    img_size = hash_size * scale
+    image = image.convert("L").resize((img_size, img_size), Image.Resampling.LANCZOS)
+    pixels = np.asarray(image).astype(float)
+
+    blocks = scipy.ndimage.gaussian_laplace(pixels, sigma=alpha)
+    blocks = blocks[::scale, ::scale]
+
+    diff = blocks > 0
+    return diff
+
 def phash(image, hash_size=8, highfreq_factor=4):
     """
     Compute the perceptual hash of the given image.

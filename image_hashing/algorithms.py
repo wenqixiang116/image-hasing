@@ -39,6 +39,46 @@ def dhash(image, hash_size=8):
 
     return _binary_array_to_hex(diff.flatten())
 
+def dhash_vertical(image, hash_size=8):
+    """
+    Vertical Difference Hash computation.
+    """
+    # Resize to hash_size x (hash_size + 1)
+    image = image.resize((hash_size, hash_size + 1), Image.Resampling.LANCZOS)
+
+    # Grayscale
+    image = image.convert("L")
+
+    # Compute differences
+    pixels = np.asarray(image)
+    # Compare pixel[x, y] to pixel[x, y+1]
+    diff = pixels[1:, :] > pixels[:-1, :]
+
+    return _binary_array_to_hex(diff.flatten())
+
+def marr_hildreth_hash(image, alpha=2.5, scale=2, hash_size=8):
+    """
+    Marr-Hildreth Hash computation.
+    """
+    import scipy.ndimage
+    img_size = hash_size * scale
+
+    # Resize
+    image = image.resize((img_size, img_size), Image.Resampling.LANCZOS)
+
+    # Grayscale
+    image = image.convert("L")
+
+    # Apply Laplacian of Gaussian
+    pixels = np.asarray(image).astype(float)
+    blocks = scipy.ndimage.gaussian_laplace(pixels, sigma=alpha)
+    blocks = blocks[::scale, ::scale]
+
+    # Compute bits
+    diff = blocks > 0
+
+    return _binary_array_to_hex(diff.flatten())
+
 def phash(image, hash_size=8, highfreq_factor=4):
     """
     Perceptual Hash computation.
