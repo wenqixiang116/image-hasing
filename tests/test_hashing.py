@@ -1,7 +1,7 @@
 import unittest
 import numpy as np
 from PIL import Image, ImageDraw
-from image_hashing.hashing import average_hash, difference_hash, phash, hamming_distance, hash_to_hex, hex_to_hash
+from image_hashing.hashing import average_hash, difference_hash, dhash_vertical, marr_hildreth_hash, phash, hamming_distance, hash_to_hex, hex_to_hash
 
 class TestHashing(unittest.TestCase):
     def setUp(self):
@@ -32,6 +32,35 @@ class TestHashing(unittest.TestCase):
         h1 = difference_hash(self.img1)
         h2 = difference_hash(self.img2)
         h3 = difference_hash(self.img3)
+
+        self.assertTrue(h1.shape == (8, 8))
+        self.assertLess(hamming_distance(h1, h2), 5)
+        self.assertGreater(hamming_distance(h1, h3), 10)
+
+    def test_dhash_vertical(self):
+        # Create an image split horizontally to test vertical diffs
+        img_h_split = Image.new('RGB', (100, 100), color='white')
+        d = ImageDraw.Draw(img_h_split)
+        d.rectangle([0, 50, 100, 100], fill='black')
+
+        # Test basic properties with original images
+        h1 = dhash_vertical(self.img1)
+        h2 = dhash_vertical(self.img2)
+        h3 = dhash_vertical(self.img3)
+
+        self.assertTrue(h1.shape == (8, 8))
+        self.assertLess(hamming_distance(h1, h2), 5)
+        self.assertGreater(hamming_distance(h1, h3), 10)
+
+        # Ensure it works on the split image and finds differences
+        h_split = dhash_vertical(img_h_split)
+        self.assertTrue(h_split.shape == (8, 8))
+        self.assertGreater(np.count_nonzero(h_split), 0)
+
+    def test_marr_hildreth_hash(self):
+        h1 = marr_hildreth_hash(self.img1)
+        h2 = marr_hildreth_hash(self.img2)
+        h3 = marr_hildreth_hash(self.img3)
 
         self.assertTrue(h1.shape == (8, 8))
         self.assertLess(hamming_distance(h1, h2), 5)
