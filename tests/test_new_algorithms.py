@@ -1,6 +1,6 @@
 import unittest
 from PIL import Image
-from image_hashing import whash, colorhash
+from image_hashing import whash, colorhash, dhash_vertical, marr_hildreth_hash
 
 class TestNewAlgorithms(unittest.TestCase):
     def setUp(self):
@@ -36,6 +36,36 @@ class TestNewAlgorithms(unittest.TestCase):
 
         # Test diff
         h3 = colorhash(self.image2)
+        self.assertNotEqual(h, h3)
+
+    def test_dhash_vertical(self):
+        # Create an image that varies vertically to avoid an all-zero hash.
+        v_image = Image.new('RGB', (100, 100), color='black')
+        for x in range(100):
+            for y in range(50, 100):
+                v_image.putpixel((x, y), (255, 255, 255))
+
+        h = dhash_vertical(v_image)
+        self.assertIsInstance(h, str)
+        self.assertEqual(len(h), 16)
+
+        h2 = dhash_vertical(v_image)
+        self.assertEqual(h, h2)
+
+        # Ensure different orientation produces a different hash.
+        # Self.image is split horizontally, which produces an all-zero hash vertically.
+        h3 = dhash_vertical(self.image)
+        self.assertNotEqual(h, h3)
+
+    def test_marr_hildreth_hash(self):
+        h = marr_hildreth_hash(self.image)
+        self.assertIsInstance(h, str)
+        self.assertEqual(len(h), 16)
+
+        h2 = marr_hildreth_hash(self.image)
+        self.assertEqual(h, h2)
+
+        h3 = marr_hildreth_hash(self.image2)
         self.assertNotEqual(h, h3)
 
 if __name__ == '__main__':
