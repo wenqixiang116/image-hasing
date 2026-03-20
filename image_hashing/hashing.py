@@ -66,6 +66,19 @@ def difference_hash(image, hash_size=8):
     diff = pixels[:, 1:] > pixels[:, :-1]
     return diff
 
+def dhash_vertical(image, hash_size=8):
+    """
+    Compute the vertical difference hash of the given image.
+    """
+    if isinstance(image, str):
+        image = Image.open(image)
+
+    image = image.convert("L").resize((hash_size, hash_size + 1), Image.Resampling.LANCZOS)
+    pixels = np.asarray(image)
+    # compare pixel to the bottom one
+    diff = pixels[1:, :] > pixels[:-1, :]
+    return diff
+
 def phash(image, hash_size=8, highfreq_factor=4):
     """
     Compute the perceptual hash of the given image.
@@ -90,3 +103,24 @@ def hamming_distance(hash1, hash2):
     if hash1.shape != hash2.shape:
          raise ValueError("Hash shapes must match")
     return np.count_nonzero(hash1 != hash2)
+
+import scipy.ndimage
+def marr_hildreth_hash(image, hash_size=8, alpha=2.5, scale=4):
+    """
+    Compute the Marr-Hildreth hash of the given image.
+    """
+    if isinstance(image, str):
+        image = Image.open(image)
+
+    image_size = hash_size * scale
+    image = image.convert("L").resize((image_size, image_size), Image.Resampling.LANCZOS)
+    pixels = np.asarray(image, dtype=np.float32)
+
+    blocks = scipy.ndimage.gaussian_laplace(pixels, alpha)
+
+    # Subsample output
+    sub_blocks = blocks[::scale, ::scale]
+
+    # Return hash array (boolean)
+    diff = sub_blocks > 0
+    return diff

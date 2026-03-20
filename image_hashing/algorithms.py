@@ -39,6 +39,23 @@ def dhash(image, hash_size=8):
 
     return _binary_array_to_hex(diff.flatten())
 
+def dhash_vertical(image, hash_size=8):
+    """
+    Vertical Difference Hash computation.
+    """
+    # Resize to hash_size x (hash_size + 1)
+    image = image.resize((hash_size, hash_size + 1), Image.Resampling.LANCZOS)
+
+    # Grayscale
+    image = image.convert("L")
+
+    # Compute differences
+    pixels = np.asarray(image)
+    # compare pixel to the bottom one
+    diff = pixels[1:, :] > pixels[:-1, :]
+
+    return _binary_array_to_hex(diff.flatten())
+
 def phash(image, hash_size=8, highfreq_factor=4):
     """
     Perceptual Hash computation.
@@ -102,6 +119,25 @@ def colorhash(image, hash_size=8):
     for band in image.split():
         hashes.append(average_hash(band, hash_size=hash_size))
     return "".join(hashes)
+
+import scipy.ndimage
+def marr_hildreth_hash(image, hash_size=8, alpha=2.5, scale=4):
+    """
+    Marr-Hildreth Hash computation.
+    """
+    image_size = hash_size * scale
+    image = image.resize((image_size, image_size), Image.Resampling.LANCZOS)
+    image = image.convert("L")
+    pixels = np.asarray(image, dtype=np.float32)
+
+    blocks = scipy.ndimage.gaussian_laplace(pixels, alpha)
+
+    # Subsample output
+    sub_blocks = blocks[::scale, ::scale]
+
+    diff = sub_blocks > 0
+
+    return _binary_array_to_hex(diff.flatten())
 
 def _binary_array_to_hex(arr):
     """
