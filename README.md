@@ -6,7 +6,11 @@ This repository contains implementations of common image hashing algorithms in P
 
 *   **Average Hash (aHash)**: Fast and suitable for finding strictly identical or near-identical images.
 *   **Difference Hash (dHash)**: More robust to color shifts and minor edits than aHash.
+*   **Vertical Difference Hash (dHash Vertical)**: Similar to dHash, but compares adjacent rows instead of adjacent columns.
 *   **Perceptual Hash (pHash)**: Robust to scaling, aspect ratio changes, and minor coloring/brightness changes. Uses Discrete Cosine Transform (DCT).
+*   **Wavelet Hash (wHash)**: Uses Discrete Wavelet Transform (DWT), operating similarly to pHash but with wavelets.
+*   **Color Hash**: Computes the average hash for each color channel.
+*   **Marr-Hildreth Hash**: Uses the Marr-Hildreth operator (Laplacian of Gaussian) for edge detection, followed by zero-crossing extraction.
 
 ## Installation
 
