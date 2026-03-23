@@ -1,7 +1,7 @@
 import unittest
 from PIL import Image
 import numpy as np
-from image_hashing import average_hash, dhash, phash, hamming_distance
+from image_hashing import average_hash, dhash, dhash_vertical, phash, hamming_distance
 
 class TestHashing(unittest.TestCase):
     def setUp(self):
@@ -10,6 +10,12 @@ class TestHashing(unittest.TestCase):
         for x in range(50, 100):
             for y in range(100):
                 self.image.putpixel((x, y), (255, 255, 255))
+
+        # Create a vertically split image: black on top, white on bottom
+        self.vertical_image = Image.new('RGB', (100, 100), color='black')
+        for x in range(100):
+            for y in range(50, 100):
+                self.vertical_image.putpixel((x, y), (255, 255, 255))
 
     def test_average_hash(self):
         h = average_hash(self.image)
@@ -26,6 +32,17 @@ class TestHashing(unittest.TestCase):
         self.assertEqual(len(h), 16)
 
         h2 = dhash(self.image)
+        self.assertEqual(h, h2)
+
+    def test_dhash_vertical(self):
+        h = dhash_vertical(self.vertical_image)
+        self.assertIsInstance(h, str)
+        self.assertEqual(len(h), 16)
+
+        # Verify it's not all zeros for an image with vertical variation
+        self.assertNotEqual(h, "0000000000000000")
+
+        h2 = dhash_vertical(self.vertical_image)
         self.assertEqual(h, h2)
 
     def test_phash(self):
