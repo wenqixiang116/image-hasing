@@ -1,7 +1,7 @@
 import unittest
 from PIL import Image
 import numpy as np
-from image_hashing import average_hash, dhash, phash, hamming_distance
+from image_hashing import average_hash, dhash, phash, hamming_distance, dhash_vertical
 
 class TestHashing(unittest.TestCase):
     def setUp(self):
@@ -10,6 +10,12 @@ class TestHashing(unittest.TestCase):
         for x in range(50, 100):
             for y in range(100):
                 self.image.putpixel((x, y), (255, 255, 255))
+
+        # Create an image that is vertically split: black on top, white on bottom
+        self.image_vertical = Image.new('RGB', (100, 100), color='black')
+        for x in range(100):
+            for y in range(50, 100):
+                self.image_vertical.putpixel((x, y), (255, 255, 255))
 
     def test_average_hash(self):
         h = average_hash(self.image)
@@ -26,6 +32,14 @@ class TestHashing(unittest.TestCase):
         self.assertEqual(len(h), 16)
 
         h2 = dhash(self.image)
+        self.assertEqual(h, h2)
+
+    def test_dhash_vertical(self):
+        h = dhash_vertical(self.image_vertical)
+        self.assertIsInstance(h, str)
+        self.assertEqual(len(h), 16)
+
+        h2 = dhash_vertical(self.image_vertical)
         self.assertEqual(h, h2)
 
     def test_phash(self):
@@ -57,6 +71,10 @@ class TestHashing(unittest.TestCase):
         h_dhash = dhash(self.image)
         h_dhash2 = dhash(image2)
         self.assertNotEqual(h_dhash, h_dhash2)
+
+        h_dhash_v = dhash_vertical(self.image_vertical)
+        h_dhash_v2 = dhash_vertical(image2)
+        self.assertNotEqual(h_dhash_v, h_dhash_v2)
 
         h_phash = phash(self.image)
         h_phash2 = phash(image2)

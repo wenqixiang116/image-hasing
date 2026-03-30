@@ -1,6 +1,7 @@
 from PIL import Image
 import numpy as np
 import scipy.fftpack
+import scipy.ndimage
 
 def _binary_array_to_hex(arr):
     """
@@ -64,6 +65,33 @@ def difference_hash(image, hash_size=8):
     pixels = np.asarray(image)
     # compare to pixel to the right
     diff = pixels[:, 1:] > pixels[:, :-1]
+    return diff
+
+def dhash_vertical(image, hash_size=8):
+    """
+    Compute the vertical difference hash of the given image.
+    """
+    if isinstance(image, str):
+        image = Image.open(image)
+
+    image = image.convert("L").resize((hash_size, hash_size + 1), Image.Resampling.LANCZOS)
+    pixels = np.asarray(image)
+    # compare to pixel below
+    diff = pixels[1:, :] > pixels[:-1, :]
+    return diff
+
+def marr_hildreth_hash(image, scale, hash_size=8, alpha=2.5):
+    """
+    Compute the Marr-Hildreth hash of the given image.
+    """
+    if isinstance(image, str):
+        image = Image.open(image)
+
+    image = image.convert("L").resize((hash_size * scale, hash_size * scale), Image.Resampling.LANCZOS)
+    pixels = np.asarray(image).astype(float)
+
+    laplacian = scipy.ndimage.gaussian_laplace(pixels, alpha)
+    diff = laplacian[::scale, ::scale] > 0
     return diff
 
 def phash(image, hash_size=8, highfreq_factor=4):
