@@ -1,7 +1,7 @@
 import unittest
 from PIL import Image
 import numpy as np
-from image_hashing import average_hash, dhash, phash, hamming_distance
+from image_hashing import average_hash, dhash, dhash_vertical, phash, marr_hildreth_hash, hamming_distance
 
 class TestHashing(unittest.TestCase):
     def setUp(self):
@@ -10,6 +10,12 @@ class TestHashing(unittest.TestCase):
         for x in range(50, 100):
             for y in range(100):
                 self.image.putpixel((x, y), (255, 255, 255))
+
+        # Create a simple image: black on top, white on bottom (vertically split)
+        self.image_v = Image.new('RGB', (100, 100), color='black')
+        for x in range(100):
+            for y in range(50, 100):
+                self.image_v.putpixel((x, y), (255, 255, 255))
 
     def test_average_hash(self):
         h = average_hash(self.image)
@@ -26,6 +32,25 @@ class TestHashing(unittest.TestCase):
         self.assertEqual(len(h), 16)
 
         h2 = dhash(self.image)
+        self.assertEqual(h, h2)
+
+    def test_dhash_vertical(self):
+        h = dhash_vertical(self.image_v)
+        self.assertIsInstance(h, str)
+        self.assertEqual(len(h), 16)
+
+        h2 = dhash_vertical(self.image_v)
+        self.assertEqual(h, h2)
+
+        # Ensure that it doesn't return an all-zero hash by checking if '0's count isn't exactly the length
+        self.assertNotEqual(h, "0" * 16)
+
+    def test_marr_hildreth_hash(self):
+        h = marr_hildreth_hash(self.image)
+        self.assertIsInstance(h, str)
+        self.assertEqual(len(h), 16)
+
+        h2 = marr_hildreth_hash(self.image)
         self.assertEqual(h, h2)
 
     def test_phash(self):
@@ -58,6 +83,14 @@ class TestHashing(unittest.TestCase):
         h_dhash2 = dhash(image2)
         self.assertNotEqual(h_dhash, h_dhash2)
 
+        h_dhash_v = dhash_vertical(self.image_v)
+        h_dhash_v2 = dhash_vertical(image2)
+        self.assertNotEqual(h_dhash_v, h_dhash_v2)
+
         h_phash = phash(self.image)
         h_phash2 = phash(image2)
         self.assertNotEqual(h_phash, h_phash2)
+
+        h_marr = marr_hildreth_hash(self.image)
+        h_marr2 = marr_hildreth_hash(image2)
+        self.assertNotEqual(h_marr, h_marr2)
