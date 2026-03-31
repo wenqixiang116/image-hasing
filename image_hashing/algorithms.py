@@ -1,6 +1,7 @@
 from PIL import Image
 import numpy as np
 import scipy.fftpack
+import scipy.ndimage
 import pywt
 
 def average_hash(image, hash_size=8):
@@ -36,6 +37,23 @@ def dhash(image, hash_size=8):
     pixels = np.asarray(image)
     # Compare pixel[x, y] to pixel[x+1, y]
     diff = pixels[:, 1:] > pixels[:, :-1]
+
+    return _binary_array_to_hex(diff.flatten())
+
+def dhash_vertical(image, hash_size=8):
+    """
+    Vertical Difference Hash computation.
+    """
+    # Resize to hash_size x (hash_size + 1)
+    image = image.resize((hash_size, hash_size + 1), Image.Resampling.LANCZOS)
+
+    # Grayscale
+    image = image.convert("L")
+
+    # Compute differences
+    pixels = np.asarray(image)
+    # Compare pixel[x, y] to pixel[x, y+1]
+    diff = pixels[1:, :] > pixels[:-1, :]
 
     return _binary_array_to_hex(diff.flatten())
 
@@ -102,6 +120,30 @@ def colorhash(image, hash_size=8):
     for band in image.split():
         hashes.append(average_hash(band, hash_size=hash_size))
     return "".join(hashes)
+
+def marr_hildreth_hash(image, hash_size=8, scale=4, alpha=2.5):
+    """
+    Marr-Hildreth Hash computation.
+    """
+    # Resize
+    img_size = hash_size * scale
+    image = image.resize((img_size, img_size), Image.Resampling.LANCZOS)
+
+    # Grayscale
+    image = image.convert("L")
+
+    # Convert to float
+    pixels = np.asarray(image).astype(float)
+
+    # Apply Laplacian of Gaussian
+    log_image = scipy.ndimage.gaussian_laplace(pixels, sigma=alpha)
+
+    # Generate final hash by subsampling and detecting zero-crossings
+    # Since we are subsampling, detecting "zero crossings" by checking if > 0
+    # provides the binary blocks.
+    diff_subsampled = log_image[::scale, ::scale] > 0
+
+    return _binary_array_to_hex(diff_subsampled.flatten())
 
 def _binary_array_to_hex(arr):
     """
