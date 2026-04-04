@@ -1,7 +1,7 @@
 import unittest
 import numpy as np
 from PIL import Image, ImageDraw
-from image_hashing.hashing import average_hash, difference_hash, phash, hamming_distance, hash_to_hex, hex_to_hash
+from image_hashing.hashing import average_hash, difference_hash, dhash_vertical, marr_hildreth_hash, phash, hamming_distance, hash_to_hex, hex_to_hash
 
 class TestHashing(unittest.TestCase):
     def setUp(self):
@@ -32,6 +32,31 @@ class TestHashing(unittest.TestCase):
         h1 = difference_hash(self.img1)
         h2 = difference_hash(self.img2)
         h3 = difference_hash(self.img3)
+
+        self.assertTrue(h1.shape == (8, 8))
+        self.assertLess(hamming_distance(h1, h2), 5)
+        self.assertGreater(hamming_distance(h1, h3), 10)
+
+    def test_dhash_vertical(self):
+        # Create an image with vertical color variation to avoid all-zero hash
+        img_vert = Image.new('RGB', (100, 100), color='white')
+        d_vert = ImageDraw.Draw(img_vert)
+        d_vert.rectangle([0, 50, 100, 100], fill='black')
+
+        img_vert2 = img_vert.resize((90, 90))
+
+        h1 = dhash_vertical(img_vert)
+        h2 = dhash_vertical(img_vert2)
+        h3 = dhash_vertical(self.img3)
+
+        self.assertTrue(h1.shape == (8, 8))
+        self.assertLess(hamming_distance(h1, h2), 5)
+        self.assertGreater(hamming_distance(h1, h3), 5)
+
+    def test_marr_hildreth_hash(self):
+        h1 = marr_hildreth_hash(self.img1)
+        h2 = marr_hildreth_hash(self.img2)
+        h3 = marr_hildreth_hash(self.img3)
 
         self.assertTrue(h1.shape == (8, 8))
         self.assertLess(hamming_distance(h1, h2), 5)

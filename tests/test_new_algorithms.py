@@ -1,6 +1,6 @@
 import unittest
 from PIL import Image
-from image_hashing import whash, colorhash
+from image_hashing import whash, colorhash, dhash_vertical, marr_hildreth_hash
 
 class TestNewAlgorithms(unittest.TestCase):
     def setUp(self):
@@ -36,6 +36,37 @@ class TestNewAlgorithms(unittest.TestCase):
 
         # Test diff
         h3 = colorhash(self.image2)
+        self.assertNotEqual(h, h3)
+
+    def test_dhash_vertical(self):
+        # image2 is solid blue, giving 0000..
+        # Let's create an image with vertical gradient
+        img_vert = Image.new('RGB', (100, 100), color='white')
+        for y in range(50, 100):
+            for x in range(100):
+                img_vert.putpixel((x, y), (0, 0, 0))
+
+        h = dhash_vertical(img_vert)
+        self.assertIsInstance(h, str)
+        self.assertEqual(len(h), 16)
+
+        h2 = dhash_vertical(img_vert)
+        self.assertEqual(h, h2)
+
+        # Test diff
+        h3 = dhash_vertical(self.image2)
+        self.assertNotEqual(h, h3)
+
+    def test_marr_hildreth_hash(self):
+        h = marr_hildreth_hash(self.image)
+        self.assertIsInstance(h, str)
+        self.assertEqual(len(h), 16)
+
+        h2 = marr_hildreth_hash(self.image)
+        self.assertEqual(h, h2)
+
+        # Test diff
+        h3 = marr_hildreth_hash(self.image2)
         self.assertNotEqual(h, h3)
 
 if __name__ == '__main__':
