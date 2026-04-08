@@ -1,7 +1,7 @@
 import unittest
 import numpy as np
 from PIL import Image, ImageDraw
-from image_hashing.hashing import average_hash, difference_hash, phash, hamming_distance, hash_to_hex, hex_to_hash
+from image_hashing.hashing import average_hash, difference_hash, dhash_vertical, marr_hildreth_hash, phash, hamming_distance, hash_to_hex, hex_to_hash
 
 class TestHashing(unittest.TestCase):
     def setUp(self):
@@ -36,6 +36,34 @@ class TestHashing(unittest.TestCase):
         self.assertTrue(h1.shape == (8, 8))
         self.assertLess(hamming_distance(h1, h2), 5)
         self.assertGreater(hamming_distance(h1, h3), 10)
+
+    def test_dhash_vertical(self):
+        # Create a vertically split image
+        img_vsplit = Image.new('RGB', (100, 100), color='black')
+        d = ImageDraw.Draw(img_vsplit)
+        d.rectangle([0, 50, 100, 100], fill='white')
+
+        h1 = dhash_vertical(img_vsplit)
+        h2 = dhash_vertical(img_vsplit.resize((90, 90)))
+        h3 = dhash_vertical(self.img3) # all black
+
+        self.assertTrue(h1.shape == (8, 8))
+        self.assertLess(hamming_distance(h1, h2), 5)
+        self.assertGreater(hamming_distance(h1, h3), 1)
+
+        # also make sure it's not all zeros for the split image
+        self.assertGreater(np.count_nonzero(h1), 0)
+
+    def test_marr_hildreth_hash(self):
+        h1 = marr_hildreth_hash(self.img1)
+        h2 = marr_hildreth_hash(self.img2)
+        h3 = marr_hildreth_hash(self.img3)
+
+        self.assertTrue(h1.shape == (8, 8))
+        self.assertLess(hamming_distance(h1, h2), 15)
+        # All black image will have hash entirely dependent on minor floating point / zeroes,
+        # but generally should be different than structured image
+        self.assertGreater(hamming_distance(h1, h3), 5)
 
     def test_phash(self):
         h1 = phash(self.img1)
