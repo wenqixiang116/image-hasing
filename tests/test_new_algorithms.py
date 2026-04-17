@@ -1,6 +1,6 @@
 import unittest
 from PIL import Image
-from image_hashing import whash, colorhash
+from image_hashing import dhash_vertical, marr_hildreth_hash, whash, colorhash
 
 class TestNewAlgorithms(unittest.TestCase):
     def setUp(self):
@@ -23,6 +23,35 @@ class TestNewAlgorithms(unittest.TestCase):
 
         # Test diff
         h3 = whash(self.image2)
+        self.assertNotEqual(h, h3)
+
+    def test_dhash_vertical(self):
+        # image has a horizontal split, creating vertical variation at x=50, not top/bottom split
+        # We need an image with vertical color variation for dhash_vertical to not be all zeroes
+        image_vsplit = Image.new('RGB', (100, 100), color='black')
+        for y in range(50, 100):
+            for x in range(100):
+                image_vsplit.putpixel((x, y), (255, 255, 255))
+
+        h = dhash_vertical(image_vsplit)
+        self.assertIsInstance(h, str)
+        self.assertEqual(len(h), 16) # 8x8 = 64 bits = 16 hex chars
+
+        h2 = dhash_vertical(image_vsplit)
+        self.assertEqual(h, h2)
+
+        h3 = dhash_vertical(self.image2)
+        self.assertNotEqual(h, h3)
+
+    def test_marr_hildreth_hash(self):
+        h = marr_hildreth_hash(self.image)
+        self.assertIsInstance(h, str)
+        self.assertEqual(len(h), 16)
+
+        h2 = marr_hildreth_hash(self.image)
+        self.assertEqual(h, h2)
+
+        h3 = marr_hildreth_hash(self.image2)
         self.assertNotEqual(h, h3)
 
     def test_colorhash(self):
