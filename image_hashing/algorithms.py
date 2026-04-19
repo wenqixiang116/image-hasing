@@ -1,6 +1,7 @@
 from PIL import Image
 import numpy as np
 import scipy.fftpack
+import scipy.ndimage
 import pywt
 
 def average_hash(image, hash_size=8):
@@ -36,6 +37,23 @@ def dhash(image, hash_size=8):
     pixels = np.asarray(image)
     # Compare pixel[x, y] to pixel[x+1, y]
     diff = pixels[:, 1:] > pixels[:, :-1]
+
+    return _binary_array_to_hex(diff.flatten())
+
+def dhash_vertical(image, hash_size=8):
+    """
+    Difference Hash computation (vertical).
+    """
+    # Resize to hash_size x (hash_size + 1)
+    image = image.resize((hash_size, hash_size + 1), Image.Resampling.LANCZOS)
+
+    # Grayscale
+    image = image.convert("L")
+
+    # Compute differences
+    pixels = np.asarray(image)
+    # Compare pixel[x, y] to pixel[x, y+1]
+    diff = pixels[1:, :] > pixels[:-1, :]
 
     return _binary_array_to_hex(diff.flatten())
 
@@ -102,6 +120,28 @@ def colorhash(image, hash_size=8):
     for band in image.split():
         hashes.append(average_hash(band, hash_size=hash_size))
     return "".join(hashes)
+
+def marr_hildreth_hash(image, alpha=2.5, scale=4, hash_size=8):
+    """
+    Marr-Hildreth Hash computation.
+    """
+    # Resize to (hash_size * scale) x (hash_size * scale)
+    image = image.resize((hash_size * scale, hash_size * scale), Image.Resampling.LANCZOS)
+
+    # Grayscale
+    image = image.convert("L")
+
+    # Convert to float and apply LoG
+    pixels = np.asarray(image).astype(float)
+    blocks = scipy.ndimage.gaussian_laplace(pixels, sigma=alpha)
+
+    # Detect zero-crossings
+    diff = blocks < 0
+
+    # Subsample to hash_size x hash_size
+    diff = diff[::scale, ::scale]
+
+    return _binary_array_to_hex(diff.flatten())
 
 def _binary_array_to_hex(arr):
     """
