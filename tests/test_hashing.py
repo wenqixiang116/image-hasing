@@ -1,7 +1,7 @@
 import unittest
 import numpy as np
 from PIL import Image, ImageDraw
-from image_hashing.hashing import average_hash, difference_hash, phash, hamming_distance, hash_to_hex, hex_to_hash
+from image_hashing.hashing import average_hash, difference_hash, dhash_vertical, marr_hildreth_hash, phash, hamming_distance, hash_to_hex, hex_to_hash
 
 class TestHashing(unittest.TestCase):
     def setUp(self):
@@ -10,9 +10,15 @@ class TestHashing(unittest.TestCase):
         d = ImageDraw.Draw(self.img1)
         d.rectangle([25, 25, 75, 75], fill='black')
 
+        # Create an image with vertical color variation for dhash_vertical
+        self.img_v = Image.new('RGB', (100, 100), color='white')
+        d_v = ImageDraw.Draw(self.img_v)
+        d_v.rectangle([0, 50, 100, 100], fill='black')
+
         # Create a slightly modified image (noise or slight shift)
         # Here I just make it slightly smaller
         self.img2 = self.img1.resize((90, 90))
+        self.img_v2 = self.img_v.resize((90, 90))
 
         # Create a completely different image
         self.img3 = Image.new('RGB', (100, 100), color='black')
@@ -32,6 +38,24 @@ class TestHashing(unittest.TestCase):
         h1 = difference_hash(self.img1)
         h2 = difference_hash(self.img2)
         h3 = difference_hash(self.img3)
+
+        self.assertTrue(h1.shape == (8, 8))
+        self.assertLess(hamming_distance(h1, h2), 5)
+        self.assertGreater(hamming_distance(h1, h3), 10)
+
+    def test_dhash_vertical(self):
+        h1 = dhash_vertical(self.img_v)
+        h2 = dhash_vertical(self.img_v2)
+        h3 = dhash_vertical(self.img3)
+
+        self.assertTrue(h1.shape == (8, 8))
+        self.assertLess(hamming_distance(h1, h2), 5)
+        self.assertGreater(hamming_distance(h1, h3), 5)
+
+    def test_marr_hildreth_hash(self):
+        h1 = marr_hildreth_hash(self.img1)
+        h2 = marr_hildreth_hash(self.img2)
+        h3 = marr_hildreth_hash(self.img3)
 
         self.assertTrue(h1.shape == (8, 8))
         self.assertLess(hamming_distance(h1, h2), 5)
