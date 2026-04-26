@@ -1,6 +1,6 @@
 import unittest
-from PIL import Image
-from image_hashing import whash, colorhash
+from PIL import Image, ImageDraw
+from image_hashing import whash, colorhash, dhash_vertical, marr_hildreth_hash
 
 class TestNewAlgorithms(unittest.TestCase):
     def setUp(self):
@@ -12,6 +12,35 @@ class TestNewAlgorithms(unittest.TestCase):
 
         # Another image
         self.image2 = Image.new('RGB', (100, 100), color='blue')
+
+        # Vertically split image (top white, bottom black)
+        self.image_v = Image.new('RGB', (100, 100), color='white')
+        d_v = ImageDraw.Draw(self.image_v)
+        d_v.rectangle([0, 50, 100, 100], fill='black')
+
+    def test_dhash_vertical(self):
+        h = dhash_vertical(self.image_v)
+        self.assertIsInstance(h, str)
+        self.assertEqual(len(h), 16) # 8x8 = 64 bits = 16 hex chars
+
+        h2 = dhash_vertical(self.image_v)
+        self.assertEqual(h, h2)
+
+        # Test diff
+        h3 = dhash_vertical(self.image2)
+        self.assertNotEqual(h, h3)
+
+    def test_marr_hildreth_hash(self):
+        h = marr_hildreth_hash(self.image)
+        self.assertIsInstance(h, str)
+        self.assertEqual(len(h), 16) # 8x8 = 64 bits = 16 hex chars
+
+        h2 = marr_hildreth_hash(self.image)
+        self.assertEqual(h, h2)
+
+        # Test diff
+        h3 = marr_hildreth_hash(self.image2)
+        self.assertNotEqual(h, h3)
 
     def test_whash(self):
         h = whash(self.image)
