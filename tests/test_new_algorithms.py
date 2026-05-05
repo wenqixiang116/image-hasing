@@ -1,6 +1,6 @@
 import unittest
 from PIL import Image
-from image_hashing import whash, colorhash
+from image_hashing import dhash_vertical, marr_hildreth_hash, whash, colorhash
 
 class TestNewAlgorithms(unittest.TestCase):
     def setUp(self):
@@ -23,6 +23,34 @@ class TestNewAlgorithms(unittest.TestCase):
 
         # Test diff
         h3 = whash(self.image2)
+        self.assertNotEqual(h, h3)
+
+    def test_dhash_vertical(self):
+        from PIL import ImageDraw
+        img_vert = Image.new('RGB', (100, 100), color='white')
+        d = ImageDraw.Draw(img_vert)
+        d.rectangle([0, 50, 100, 100], fill='black')
+
+        h = dhash_vertical(img_vert)
+        self.assertIsInstance(h, str)
+        self.assertEqual(len(h), 16)
+
+        h2 = dhash_vertical(img_vert)
+        self.assertEqual(h, h2)
+
+        img_vert2 = Image.new('RGB', (100, 100), color='blue')
+        h3 = dhash_vertical(img_vert2)
+        self.assertNotEqual(h, h3)
+
+    def test_marr_hildreth_hash(self):
+        h = marr_hildreth_hash(self.image)
+        self.assertIsInstance(h, str)
+        self.assertEqual(len(h), 16)
+
+        h2 = marr_hildreth_hash(self.image)
+        self.assertEqual(h, h2)
+
+        h3 = marr_hildreth_hash(self.image2)
         self.assertNotEqual(h, h3)
 
     def test_colorhash(self):
