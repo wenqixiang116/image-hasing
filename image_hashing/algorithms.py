@@ -1,7 +1,15 @@
 from PIL import Image
 import numpy as np
 import scipy.fftpack
+import scipy.ndimage
 import pywt
+
+def _binary_array_to_hex(arr):
+    """
+    Convert a binary array to a hex string.
+    """
+    bit_string = "".join(str(int(b)) for b in arr)
+    return "{:0>{width}x}".format(int(bit_string, 2), width=len(arr)//4)
 
 def average_hash(image, hash_size=8):
     """
@@ -103,13 +111,6 @@ def colorhash(image, hash_size=8):
         hashes.append(average_hash(band, hash_size=hash_size))
     return "".join(hashes)
 
-def _binary_array_to_hex(arr):
-    """
-    Convert a binary array to a hex string.
-    """
-    bit_string = "".join(str(int(b)) for b in arr)
-    return "{:0>{width}x}".format(int(bit_string, 2), width=len(arr)//4)
-
 def hamming_distance(hash1, hash2):
     """
     Compute Hamming distance between two hex hash strings.
@@ -119,3 +120,42 @@ def hamming_distance(hash1, hash2):
 
     x = h1 ^ h2
     return bin(x).count('1')
+
+def dhash_vertical(image, hash_size=8):
+    """
+    Vertical Difference Hash computation.
+    """
+    # Resize to hash_size x (hash_size + 1)
+    image = image.resize((hash_size, hash_size + 1), Image.Resampling.LANCZOS)
+
+    # Grayscale
+    image = image.convert("L")
+
+    # Compute differences
+    pixels = np.asarray(image)
+    # Compare pixel[x, y] to pixel[x, y+1]
+    diff = pixels[1:, :] > pixels[:-1, :]
+
+    return _binary_array_to_hex(diff.flatten())
+
+def marr_hildreth_hash(image, hash_size=8, scale=4, alpha=2.5):
+    """
+    Marr-Hildreth Hash computation.
+    """
+    # Resize to (hash_size * scale) x (hash_size * scale)
+    image = image.resize((hash_size * scale, hash_size * scale), Image.Resampling.LANCZOS)
+
+    # Grayscale
+    image = image.convert("L")
+
+    # Compute Laplace of Gaussian
+    pixels = np.asarray(image).astype(float)
+    blocks = scipy.ndimage.gaussian_laplace(pixels, alpha)
+
+    # Detect zero crossings
+    diff = blocks < 0
+
+    # Subsample
+    diff = diff[::scale, ::scale]
+
+    return _binary_array_to_hex(diff.flatten())
