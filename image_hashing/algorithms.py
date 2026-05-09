@@ -1,6 +1,7 @@
 from PIL import Image
 import numpy as np
 import scipy.fftpack
+import scipy.ndimage
 import pywt
 
 def average_hash(image, hash_size=8):
@@ -36,6 +37,23 @@ def dhash(image, hash_size=8):
     pixels = np.asarray(image)
     # Compare pixel[x, y] to pixel[x+1, y]
     diff = pixels[:, 1:] > pixels[:, :-1]
+
+    return _binary_array_to_hex(diff.flatten())
+
+def dhash_vertical(image, hash_size=8):
+    """
+    Vertical Difference Hash computation.
+    """
+    # Resize to hash_size x (hash_size + 1)
+    image = image.resize((hash_size, hash_size + 1), Image.Resampling.LANCZOS)
+
+    # Grayscale
+    image = image.convert("L")
+
+    # Compute differences
+    pixels = np.asarray(image)
+    # Compare pixel[x, y] to pixel[x, y+1]
+    diff = pixels[1:, :] > pixels[:-1, :]
 
     return _binary_array_to_hex(diff.flatten())
 
@@ -102,6 +120,34 @@ def colorhash(image, hash_size=8):
     for band in image.split():
         hashes.append(average_hash(band, hash_size=hash_size))
     return "".join(hashes)
+
+def marr_hildreth_hash(image, alpha=2.5, scale=4):
+    """
+    Marr-Hildreth Hash computation.
+    """
+    # We use a default hash_size of 8, so blocks are 8x8.
+    # The scale determines how many pixels per block.
+    # We will compute a hash of size 8x8.
+    hash_size = 8
+
+    # Resize to (hash_size * scale, hash_size * scale)
+    img_size = hash_size * scale
+    image = image.resize((img_size, img_size), Image.Resampling.LANCZOS)
+
+    # Grayscale
+    image = image.convert("L")
+
+    # Apply Laplacian of Gaussian
+    pixels = np.asarray(image).astype(float)
+    blocks = scipy.ndimage.gaussian_laplace(pixels, alpha)
+
+    # Subsample to get an 8x8 hash
+    blocks = blocks[0::scale, 0::scale]
+
+    # Extract binary hash
+    diff = blocks < 0
+
+    return _binary_array_to_hex(diff.flatten())
 
 def _binary_array_to_hex(arr):
     """
