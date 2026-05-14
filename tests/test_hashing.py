@@ -1,7 +1,7 @@
 import unittest
 import numpy as np
 from PIL import Image, ImageDraw
-from image_hashing.hashing import average_hash, difference_hash, phash, hamming_distance, hash_to_hex, hex_to_hash
+from image_hashing.hashing import average_hash, difference_hash, phash, hamming_distance, hash_to_hex, hex_to_hash, dhash_vertical, marr_hildreth_hash
 
 class TestHashing(unittest.TestCase):
     def setUp(self):
@@ -16,6 +16,11 @@ class TestHashing(unittest.TestCase):
 
         # Create a completely different image
         self.img3 = Image.new('RGB', (100, 100), color='black')
+
+        # Create a vertically split image
+        self.img_vsplit = Image.new('RGB', (100, 100), color='black')
+        d_vsplit = ImageDraw.Draw(self.img_vsplit)
+        d_vsplit.rectangle([0, 50, 100, 100], fill='white')
 
     def test_average_hash(self):
         h1 = average_hash(self.img1)
@@ -65,6 +70,24 @@ class TestHashing(unittest.TestCase):
         arr = np.ones((1, 9), dtype=bool)
         hex_str = hash_to_hex(arr)
         self.assertEqual(hex_str, "ff01")
+
+    def test_dhash_vertical(self):
+        h1 = dhash_vertical(self.img_vsplit)
+        h2 = dhash_vertical(self.img_vsplit.resize((90, 90)))
+        h3 = dhash_vertical(self.img1)
+
+        self.assertTrue(h1.shape == (8, 8))
+        self.assertLess(hamming_distance(h1, h2), 5)
+        self.assertGreater(hamming_distance(h1, h3), 10)
+
+    def test_marr_hildreth_hash(self):
+        h1 = marr_hildreth_hash(self.img1)
+        h2 = marr_hildreth_hash(self.img2)
+        h3 = marr_hildreth_hash(self.img3)
+
+        self.assertTrue(h1.shape == (8, 8))
+        self.assertLess(hamming_distance(h1, h2), 5)
+        self.assertGreater(hamming_distance(h1, h3), 10)
 
 if __name__ == '__main__':
     unittest.main()
