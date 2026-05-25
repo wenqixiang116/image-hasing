@@ -1,7 +1,7 @@
 import unittest
 import numpy as np
 from PIL import Image, ImageDraw
-from image_hashing.hashing import average_hash, difference_hash, phash, hamming_distance, hash_to_hex, hex_to_hash
+from image_hashing.hashing import average_hash, difference_hash, dhash_vertical, phash, marr_hildreth_hash, hamming_distance, hash_to_hex, hex_to_hash
 
 class TestHashing(unittest.TestCase):
     def setUp(self):
@@ -16,6 +16,11 @@ class TestHashing(unittest.TestCase):
 
         # Create a completely different image
         self.img3 = Image.new('RGB', (100, 100), color='black')
+
+        # Create a vertically split image for vertical dhash testing
+        self.img_vsplit = Image.new('RGB', (100, 100), color='white')
+        d_v = ImageDraw.Draw(self.img_vsplit)
+        d_v.rectangle([0, 50, 100, 100], fill='black')
 
     def test_average_hash(self):
         h1 = average_hash(self.img1)
@@ -32,6 +37,27 @@ class TestHashing(unittest.TestCase):
         h1 = difference_hash(self.img1)
         h2 = difference_hash(self.img2)
         h3 = difference_hash(self.img3)
+
+        self.assertTrue(h1.shape == (8, 8))
+        self.assertLess(hamming_distance(h1, h2), 5)
+        self.assertGreater(hamming_distance(h1, h3), 10)
+
+    def test_dhash_vertical(self):
+        h1 = dhash_vertical(self.img_vsplit)
+        h2 = dhash_vertical(self.img_vsplit.resize((90, 90)))
+        h3 = dhash_vertical(self.img3)
+
+        self.assertTrue(h1.shape == (8, 8))
+        self.assertLess(hamming_distance(h1, h2), 5)
+        # Should be able to distinguish between horizontally split/different images
+        self.assertGreater(hamming_distance(h1, h3), 10)
+        # Ensure it's not all zeros for vertically split image
+        self.assertGreater(np.count_nonzero(h1), 0)
+
+    def test_marr_hildreth_hash(self):
+        h1 = marr_hildreth_hash(self.img1)
+        h2 = marr_hildreth_hash(self.img2)
+        h3 = marr_hildreth_hash(self.img3)
 
         self.assertTrue(h1.shape == (8, 8))
         self.assertLess(hamming_distance(h1, h2), 5)
