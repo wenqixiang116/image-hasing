@@ -1,7 +1,7 @@
 import unittest
 import numpy as np
 from PIL import Image, ImageDraw
-from image_hashing.hashing import average_hash, difference_hash, phash, hamming_distance, hash_to_hex, hex_to_hash
+from image_hashing.hashing import average_hash, difference_hash, dhash_vertical, phash, marr_hildreth_hash, hamming_distance, hash_to_hex, hex_to_hash
 
 class TestHashing(unittest.TestCase):
     def setUp(self):
@@ -16,6 +16,17 @@ class TestHashing(unittest.TestCase):
 
         # Create a completely different image
         self.img3 = Image.new('RGB', (100, 100), color='black')
+
+        # Create an image with vertical variations for dhash_vertical test
+        self.vertical_image = Image.new('RGB', (100, 100), color='black')
+        for y in range(50, 100):
+            for x in range(100):
+                self.vertical_image.putpixel((x, y), (255, 255, 255))
+
+        self.vertical_image2 = Image.new('RGB', (100, 100), color='white')
+        for y in range(50, 100):
+            for x in range(100):
+                self.vertical_image2.putpixel((x, y), (0, 0, 0))
 
     def test_average_hash(self):
         h1 = average_hash(self.img1)
@@ -37,6 +48,15 @@ class TestHashing(unittest.TestCase):
         self.assertLess(hamming_distance(h1, h2), 5)
         self.assertGreater(hamming_distance(h1, h3), 10)
 
+    def test_dhash_vertical(self):
+        h1 = dhash_vertical(self.vertical_image)
+        h2 = dhash_vertical(self.vertical_image2)
+        h3 = dhash_vertical(self.img3) # Black image -> zeros
+
+        self.assertTrue(h1.shape == (8, 8))
+        self.assertGreater(hamming_distance(h1, h2), 10)
+        self.assertGreater(hamming_distance(h1, h3), 5)
+
     def test_phash(self):
         h1 = phash(self.img1)
         h2 = phash(self.img2)
@@ -45,6 +65,15 @@ class TestHashing(unittest.TestCase):
         self.assertTrue(h1.shape == (8, 8))
         self.assertLess(hamming_distance(h1, h2), 5)
         self.assertGreater(hamming_distance(h1, h3), 10)
+
+    def test_marr_hildreth_hash(self):
+        h1 = marr_hildreth_hash(self.img1)
+        h2 = marr_hildreth_hash(self.img2)
+        h3 = marr_hildreth_hash(self.img3)
+
+        self.assertTrue(h1.shape == (8, 8))
+        self.assertLess(hamming_distance(h1, h2), 15) # LoG can be sensitive to scaling
+        self.assertGreater(hamming_distance(h1, h3), 5)
 
     def test_hex_conversion(self):
         h1 = average_hash(self.img1)
