@@ -1,7 +1,7 @@
 import unittest
 import numpy as np
 from PIL import Image, ImageDraw
-from image_hashing.hashing import average_hash, difference_hash, phash, hamming_distance, hash_to_hex, hex_to_hash
+from image_hashing.hashing import average_hash, difference_hash, dhash_vertical, phash, marr_hildreth_hash, hamming_distance, hash_to_hex, hex_to_hash
 
 class TestHashing(unittest.TestCase):
     def setUp(self):
@@ -37,6 +37,25 @@ class TestHashing(unittest.TestCase):
         self.assertLess(hamming_distance(h1, h2), 5)
         self.assertGreater(hamming_distance(h1, h3), 10)
 
+    def test_dhash_vertical(self):
+        # Create an image that is split vertically
+        vert_img = Image.new('RGB', (100, 100), color='white')
+        d = ImageDraw.Draw(vert_img)
+        d.rectangle([0, 50, 100, 100], fill='black')
+
+        h = dhash_vertical(vert_img)
+        self.assertTrue(h.shape == (8, 8))
+        # Ensure it creates a meaningful hash (non-zero array)
+        self.assertTrue(np.any(h))
+
+        # Test consistency with resized image
+        h_resized = dhash_vertical(vert_img.resize((90, 90)))
+        self.assertLess(hamming_distance(h, h_resized), 5)
+
+        # Test with a different image
+        h_diff = dhash_vertical(self.img3)
+        self.assertGreater(hamming_distance(h, h_diff), 5)
+
     def test_phash(self):
         h1 = phash(self.img1)
         h2 = phash(self.img2)
@@ -45,6 +64,17 @@ class TestHashing(unittest.TestCase):
         self.assertTrue(h1.shape == (8, 8))
         self.assertLess(hamming_distance(h1, h2), 5)
         self.assertGreater(hamming_distance(h1, h3), 10)
+
+    def test_marr_hildreth_hash(self):
+        h1 = marr_hildreth_hash(self.img1)
+        h2 = marr_hildreth_hash(self.img2)
+        h3 = marr_hildreth_hash(self.img3)
+
+        self.assertTrue(h1.shape == (8, 8))
+        # Check consistency for slightly changed image
+        self.assertLess(hamming_distance(h1, h2), 5)
+        # Compare hashes of different images to ensure they are not equal
+        self.assertGreater(hamming_distance(h1, h3), 5)
 
     def test_hex_conversion(self):
         h1 = average_hash(self.img1)
