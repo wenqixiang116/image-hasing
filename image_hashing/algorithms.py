@@ -2,6 +2,7 @@ from PIL import Image
 import numpy as np
 import scipy.fftpack
 import pywt
+import scipy.ndimage
 
 def average_hash(image, hash_size=8):
     """
@@ -36,6 +37,44 @@ def dhash(image, hash_size=8):
     pixels = np.asarray(image)
     # Compare pixel[x, y] to pixel[x+1, y]
     diff = pixels[:, 1:] > pixels[:, :-1]
+
+    return _binary_array_to_hex(diff.flatten())
+
+def dhash_vertical(image, hash_size=8):
+    """
+    Vertical Difference Hash computation.
+    """
+    # Resize to hash_size x (hash_size + 1)
+    image = image.resize((hash_size, hash_size + 1), Image.Resampling.LANCZOS)
+
+    # Grayscale
+    image = image.convert("L")
+
+    # Compute differences
+    pixels = np.asarray(image)
+    # Compare pixel[x, y+1] to pixel[x, y]
+    diff = pixels[1:, :] > pixels[:-1, :]
+
+    return _binary_array_to_hex(diff.flatten())
+
+def marr_hildreth_hash(image, hash_size=8, scale=4):
+    """
+    Marr-Hildreth Hash computation.
+    """
+    # Resize to (hash_size * scale) x (hash_size * scale)
+    image = image.resize((hash_size * scale, hash_size * scale), Image.Resampling.LANCZOS)
+
+    # Grayscale
+    image = image.convert("L")
+
+    # Convert to float
+    pixels = np.asarray(image, dtype=float)
+
+    # apply laplacian of gaussian
+    blocks = scipy.ndimage.gaussian_laplace(pixels, sigma=2.5)
+
+    # subsample and check zero crossings
+    diff = blocks[::scale, ::scale] < 0
 
     return _binary_array_to_hex(diff.flatten())
 
