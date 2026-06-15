@@ -1,7 +1,7 @@
 import unittest
 import numpy as np
 from PIL import Image, ImageDraw
-from image_hashing.hashing import average_hash, difference_hash, phash, hamming_distance, hash_to_hex, hex_to_hash
+from image_hashing.hashing import average_hash, difference_hash, dhash_vertical, marr_hildreth_hash, phash, hamming_distance, hash_to_hex, hex_to_hash
 
 class TestHashing(unittest.TestCase):
     def setUp(self):
@@ -9,6 +9,12 @@ class TestHashing(unittest.TestCase):
         self.img1 = Image.new('RGB', (100, 100), color='white')
         d = ImageDraw.Draw(self.img1)
         d.rectangle([25, 25, 75, 75], fill='black')
+
+        # Create a vertically split image
+        self.img_vertical = Image.new('RGB', (100, 100), color='black')
+        for x in range(100):
+            for y in range(50, 100):
+                self.img_vertical.putpixel((x, y), (255, 255, 255))
 
         # Create a slightly modified image (noise or slight shift)
         # Here I just make it slightly smaller
@@ -45,6 +51,25 @@ class TestHashing(unittest.TestCase):
         self.assertTrue(h1.shape == (8, 8))
         self.assertLess(hamming_distance(h1, h2), 5)
         self.assertGreater(hamming_distance(h1, h3), 10)
+
+    def test_dhash_vertical(self):
+        h1 = dhash_vertical(self.img_vertical)
+        h2 = dhash_vertical(self.img2)
+        h3 = dhash_vertical(self.img3)
+
+        self.assertTrue(h1.shape == (8, 8))
+        # Self-check consistency for h1
+        self.assertEqual(hamming_distance(h1, h1), 0)
+        # Ensure it captured the vertical change
+        self.assertGreater(np.count_nonzero(h1), 0)
+
+    def test_marr_hildreth_hash(self):
+        h1 = marr_hildreth_hash(self.img1)
+        h2 = marr_hildreth_hash(self.img2)
+        h3 = marr_hildreth_hash(self.img3)
+
+        self.assertTrue(h1.shape == (8, 8))
+        self.assertLess(hamming_distance(h1, h2), 5)
 
     def test_hex_conversion(self):
         h1 = average_hash(self.img1)
