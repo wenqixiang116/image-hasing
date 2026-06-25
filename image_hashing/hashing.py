@@ -1,6 +1,7 @@
 from PIL import Image
 import numpy as np
 import scipy.fftpack
+import scipy.ndimage
 
 def _binary_array_to_hex(arr):
     """
@@ -82,6 +83,35 @@ def phash(image, hash_size=8, highfreq_factor=4):
     med = np.median(dctlowfreq)
     diff = dctlowfreq > med
     return diff
+
+def dhash_vertical(image, hash_size=8):
+    """
+    Compute the vertical difference hash of the given image.
+    """
+    if isinstance(image, str):
+        image = Image.open(image)
+
+    image = image.convert("L").resize((hash_size, hash_size + 1), Image.Resampling.LANCZOS)
+    pixels = np.asarray(image)
+    # compare to pixel to the right
+    diff = pixels[1:, :] > pixels[:-1, :]
+    return diff
+
+def marr_hildreth_hash(image, hash_size=8, scale=4, sigma=2.5):
+    """
+    Compute the Marr-Hildreth hash of the given image.
+    """
+    if isinstance(image, str):
+        image = Image.open(image)
+
+    dim = hash_size * scale
+    image = image.convert("L").resize((dim, dim), Image.Resampling.LANCZOS)
+    pixels = np.asarray(image, dtype=float)
+
+    blocks = scipy.ndimage.gaussian_laplace(pixels, sigma=sigma)
+    diff = blocks < 0
+    subsampled = diff[::scale, ::scale]
+    return subsampled
 
 def hamming_distance(hash1, hash2):
     """
