@@ -66,6 +66,44 @@ def difference_hash(image, hash_size=8):
     diff = pixels[:, 1:] > pixels[:, :-1]
     return diff
 
+def dhash_vertical(image, hash_size=8):
+    """
+    Compute the vertical difference hash of the given image.
+    """
+    if isinstance(image, str):
+        image = Image.open(image)
+
+    image = image.convert("L").resize((hash_size, hash_size + 1), Image.Resampling.LANCZOS)
+    pixels = np.asarray(image)
+    # compare adjacent rows (vertical gradients)
+    diff = pixels[1:, :] > pixels[:-1, :]
+    return diff
+
+def marr_hildreth_hash(image, hash_size=8, scale=4):
+    """
+    Compute the Marr-Hildreth hash of the given image.
+    """
+    if isinstance(image, str):
+        image = Image.open(image)
+
+    import scipy.ndimage
+
+    # Resize to (hash_size * scale, hash_size * scale)
+    size = hash_size * scale
+    image = image.convert("L").resize((size, size), Image.Resampling.LANCZOS)
+
+    # Convert image data to float before applying the Laplacian of Gaussian filter
+    pixels = np.asarray(image, dtype=np.float32)
+
+    # Apply Laplacian of Gaussian
+    blocks = scipy.ndimage.gaussian_laplace(pixels, sigma=2.5)
+
+    # Detect zero crossings
+    diff = blocks < 0
+
+    # Subsample taking every scale-th pixel
+    return diff[::scale, ::scale]
+
 def phash(image, hash_size=8, highfreq_factor=4):
     """
     Compute the perceptual hash of the given image.
