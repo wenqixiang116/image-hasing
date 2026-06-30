@@ -1,6 +1,7 @@
 from PIL import Image
 import numpy as np
 import scipy.fftpack
+import scipy.ndimage
 
 def _binary_array_to_hex(arr):
     """
@@ -90,3 +91,31 @@ def hamming_distance(hash1, hash2):
     if hash1.shape != hash2.shape:
          raise ValueError("Hash shapes must match")
     return np.count_nonzero(hash1 != hash2)
+
+def difference_hash_vertical(image, hash_size=8):
+    """
+    Compute the vertical difference hash of the given image.
+    """
+    if isinstance(image, str):
+        image = Image.open(image)
+
+    image = image.convert("L").resize((hash_size, hash_size + 1), Image.Resampling.LANCZOS)
+    pixels = np.asarray(image)
+    # compare to pixel to the bottom
+    diff = pixels[1:, :] > pixels[:-1, :]
+    return diff
+
+def marr_hildreth_hash(image, hash_size=8, scale=4, sigma=2.5):
+    """
+    Compute the Marr-Hildreth hash of the given image.
+    """
+    if isinstance(image, str):
+        image = Image.open(image)
+
+    image = image.convert("L").resize((hash_size * scale, hash_size * scale), Image.Resampling.LANCZOS)
+    pixels = np.asarray(image, dtype=float)
+
+    blocks = scipy.ndimage.gaussian_laplace(pixels, sigma=sigma)
+    subsampled = blocks[::scale, ::scale]
+    diff = subsampled < 0
+    return diff
