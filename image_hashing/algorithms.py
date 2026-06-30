@@ -1,6 +1,7 @@
 from PIL import Image
 import numpy as np
 import scipy.fftpack
+import scipy.ndimage
 import pywt
 
 def average_hash(image, hash_size=8):
@@ -119,3 +120,42 @@ def hamming_distance(hash1, hash2):
 
     x = h1 ^ h2
     return bin(x).count('1')
+
+def dhash_vertical(image, hash_size=8):
+    """
+    Vertical Difference Hash computation.
+    """
+    # Resize to hash_size x (hash_size + 1)
+    image = image.resize((hash_size, hash_size + 1), Image.Resampling.LANCZOS)
+
+    # Grayscale
+    image = image.convert("L")
+
+    # Compute differences
+    pixels = np.asarray(image)
+    # Compare pixel[x, y] to pixel[x, y+1]
+    diff = pixels[1:, :] > pixels[:-1, :]
+
+    return _binary_array_to_hex(diff.flatten())
+
+def marr_hildreth_hash(image, hash_size=8, scale=4, sigma=2.5):
+    """
+    Marr-Hildreth Hash computation.
+    """
+    # Resize to (hash_size * scale, hash_size * scale)
+    image = image.resize((hash_size * scale, hash_size * scale), Image.Resampling.LANCZOS)
+
+    # Grayscale
+    image = image.convert("L")
+
+    # Compute Laplacian of Gaussian
+    pixels = np.asarray(image, dtype=float)
+    blocks = scipy.ndimage.gaussian_laplace(pixels, sigma=sigma)
+
+    # Subsample result
+    subsampled = blocks[::scale, ::scale]
+
+    # Compute bits
+    diff = subsampled < 0
+
+    return _binary_array_to_hex(diff.flatten())
