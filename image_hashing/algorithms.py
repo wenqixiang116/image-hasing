@@ -1,6 +1,7 @@
 from PIL import Image
 import numpy as np
 import scipy.fftpack
+import scipy.ndimage
 import pywt
 
 def average_hash(image, hash_size=8):
@@ -90,6 +91,47 @@ def whash(image, hash_size=8):
 
     # Compute bits
     diff = LL > med
+
+    return _binary_array_to_hex(diff.flatten())
+
+def dhash_vertical(image, hash_size=8):
+    """
+    Vertical Difference Hash computation.
+    """
+    # Resize to hash_size x (hash_size + 1)
+    image = image.resize((hash_size, hash_size + 1), Image.Resampling.LANCZOS)
+
+    # Grayscale
+    image = image.convert("L")
+
+    # Compute differences
+    pixels = np.asarray(image)
+    # Compare pixel[y, x] to pixel[y+1, x]
+    diff = pixels[1:, :] > pixels[:-1, :]
+
+    return _binary_array_to_hex(diff.flatten())
+
+def marr_hildreth_hash(image, hash_size=8, scale=4):
+    """
+    Marr-Hildreth Hash computation.
+    """
+    img_size = hash_size * scale
+
+    # Resize
+    image = image.resize((img_size, img_size), Image.Resampling.LANCZOS)
+
+    # Grayscale
+    image = image.convert("L")
+
+    # Convert to float and apply Laplacian of Gaussian
+    pixels = np.asarray(image).astype(float)
+    blocks = scipy.ndimage.gaussian_laplace(pixels, sigma=2.5)
+
+    # Detect zero-crossings
+    diff = blocks < 0
+
+    # Subsample
+    diff = diff[::scale, ::scale]
 
     return _binary_array_to_hex(diff.flatten())
 
